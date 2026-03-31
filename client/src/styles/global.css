@@ -1,0 +1,59 @@
+@import url("https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Space+Grotesk:wght@400;500;700&display=swap");
+
+:root {
+  --bg-main: #070b18;
+  --bg-strong: #0d1430;
+  --bg-panel: rgba(13, 20, 48, 0.76);
+  --bg-panel-soft: rgba(22, 30, 67, 0.72);
+  --text-main: #e8ecff;
+  --text-muted: #98a5d9;
+  --stroke: rgba(152, 170, 255, 0.28);
+  --accent: #7a8bff;
+  --accent-2: #b55dff;
+  --danger: #ff6b81;
+  --success: #5bf0cf;
+  --shadow-1: 0 20px 40px rgba(2, 5, 16, 0.45);
+  --shadow-2: 0 8px 20px rgba(4, 7, 22, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(
+      1200px 800px at 10% -10%,
+      rgba(181, 93, 255, 0.2),
+      transparent 58%
+    ),
+    radial-gradient(
+      1000px 760px at 115% 20%,
+      rgba(78, 121, 255, 0.26),
+      transparent 60%
+    ),
+    linear-gradient(170deg, #090f22 0%, #060913 48%, #05070f 100%);
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
