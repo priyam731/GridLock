@@ -1,166 +1,126 @@
 # GridLock
 
-GridLock is a real-time shared grid app where players claim territory on a 10x10 board. Every capture is synchronized instantly via Socket.io, and a live leaderboard tracks the top players.
+GridLock is a real-time shared grid application where players compete to capture cells on a live board. It is designed to be simple to understand, fast to use, and easy to extend.
 
-## Highlights
+## Live Demo
 
-- Real-time multiplayer capture loop over Socket.io
-- 10x10 grid (100 cells) with animated updates
-- Server-authoritative 3s cooldown per player
-- In-memory state using Maps for fast reads and writes
-- Top-10 leaderboard with live updates
-- Territorial persistence: cells remain owned even after disconnects
+- Frontend: [https://grid-lock-gamma.vercel.app](https://grid-lock-gamma.vercel.app)
+- Backend: [https://gridlock-server.onrender.com](https://gridlock-server.onrender.com)
+- Source code: [https://github.com/priyam731/GridLock](https://github.com/priyam731/GridLock)
+
+If the live app takes a moment to connect, wait a few seconds for the backend to wake up. If it still does not work, clone this repository and run it locally using the steps below.
+
+## What It Does
+
+- Shows a shared 10x10 grid with 100 cells
+- Lets any connected user capture unclaimed or owned cells
+- Pushes updates to every client in real time
+- Tracks player ownership, online users, and a live leaderboard
+- Keeps captured cells owned even if a user disconnects
 
 ## Tech Stack
 
-- Frontend: React 18 + TypeScript + Vite + CSS Modules
-- Backend: Node.js + Express + Socket.io + TypeScript
-- Storage: In-memory Maps (easy Redis swap later)
+- Frontend: React 18, TypeScript, Vite, CSS Modules
+- Backend: Node.js, Express, Socket.io, TypeScript
+- Realtime: Socket.io over WebSockets with polling fallback
+- Storage: In-memory `Map` on the server
+- Deployment: Vercel for the frontend, Render for the backend
 
-## Project Structure
+## Architecture
 
-```text
-GridLock/
-├── client/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Cell/
-│   │   │   ├── Grid/
-│   │   │   ├── JoinScreen/
-│   │   │   ├── Leaderboard/
-│   │   │   ├── Toast/
-│   │   │   └── UserPanel/
-│   │   ├── hooks/
-│   │   │   ├── useCooldown.ts
-│   │   │   └── useGrid.ts
-│   │   ├── services/
-│   │   │   └── socketService.ts
-│   │   ├── styles/
-│   │   │   └── global.css
-│   │   ├── types/
-│   │   │   ├── css.d.ts
-│   │   │   └── index.ts
-│   │   ├── utils/
-│   │   │   └── nameGenerator.ts
-│   │   ├── App.module.css
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   └── package.json
-└── server/
-    ├── src/
-    │   ├── config/
-    │   ├── controllers/
-    │   ├── models/
-    │   ├── routes/
-    │   ├── services/
-    │   ├── socket/
-    │   ├── utils/
-    │   ├── app.ts
-    │   └── server.ts
-    └── package.json
-```
+GridLock uses a modular, MVC-inspired structure so the code stays maintainable:
 
-## Architecture (MVC-Inspired Modular)
+- `server/src/config` holds runtime settings like port, board size, cooldown, and CORS origin
+- `server/src/models` contains pure TypeScript types
+- `server/src/services` contains the core game logic
+- `server/src/controllers` handles HTTP responses
+- `server/src/routes` wires endpoints together
+- `server/src/socket` handles Socket.io events and broadcasts
+- `client/src/types` defines shared client-side contracts
+- `client/src/services` wraps Socket.io for the UI
+- `client/src/hooks` manages game state and cooldown timing
+- `client/src/components` contains the UI
 
-### Backend
+## Realtime Flow
 
-- config: constants like port, grid size, cooldown, CORS origin
-- models: pure TypeScript interfaces (Cell, User, LeaderboardEntry)
-- services:
-  - GridService: owns authoritative in-memory grid and capture mutations
-  - UserService: manages users, colors, cooldown checks, leaderboard ranking
-- controllers: HTTP route handlers
-- routes: REST route wiring
-- socket: event handlers and broadcast logic
-- app.ts: composition root for middleware, services, routes, and sockets
-- server.ts: process entrypoint and listener
+1. The client connects and sends `user:join`.
+2. The server returns a full `game:init` snapshot.
+3. When a player clicks a cell, the client sends `cell:capture`.
+4. The server validates the request, updates the grid, and broadcasts `cell:updated` and `leaderboard:updated`.
+5. If the capture is blocked, the server sends `capture:error` and the UI shows feedback.
 
-### Frontend
+## Bonus Features
 
-- types: shared client-side contracts for state and socket payloads
-- services: thin Socket.io wrapper with typed event helpers
-- hooks:
-  - useGrid: reducer + socket event integration + optimistic cooldown mirror
-  - useCooldown: computes remaining cooldown and progress bar values
-- components:
-  - JoinScreen: username gate before entering game
-  - Grid: board container and deterministic cell ordering
-  - Cell: clickable tile with pulse animation
-  - UserPanel: player stats + cooldown bar
-  - Leaderboard: top 10 ranking
-  - Toast: transient feedback/error messaging
-- styles: global tokens, reset, gradients, typography
+- Unique player names and colors
+- Server-side cooldown to prevent spam
+- Live top-10 leaderboard
+- Capture pulse animation for updated cells
+- Toast messages for invalid actions
+- Cell ownership persists after disconnect
 
-## Real-Time Event Contract
-
-### Client -> Server
-
-- user:join { name }
-- cell:capture { cellId }
-
-### Server -> Client
-
-- game:init { user, cells, leaderboard, stats }
-- cell:updated { cell }
-- leaderboard:updated { leaderboard, stats }
-- capture:error { message, cooldownMs? }
-- user:joined { userId, name, color, onlinePlayers }
-- user:left { userId, name, onlinePlayers }
-
-## Core Design Decisions
-
-1. Conflict resolution
-   - Node.js event loop serializes incoming capture events; first processed event wins.
-2. Cooldown enforcement
-   - Cooldown is enforced server-side. The client mirrors cooldown in UI for responsiveness.
-3. Persistent territory
-   - Cells keep ownership after disconnect, preserving game history and strategic territory.
-4. Color allocation
-   - A curated palette is tracked server-side to avoid duplicate colors while available.
-5. Update animation
-   - Client tracks recently updated cell IDs and clears them after 600ms to trigger pulse.
-
-## Setup
+## Local Setup
 
 ### Prerequisites
 
-- Node.js 18+
-- npm 9+
+- Node.js 18 or newer
+- npm 9 or newer
 
-### 1) Install dependencies
+### Install dependencies
 
 ```bash
-cd server && npm install
-cd ../client && npm install
+cd server
+npm install
+
+cd ../client
+npm install
 ```
 
-### 2) Run in development
+### Run locally
 
-In terminal 1:
+Open two terminals.
+
+Terminal 1:
 
 ```bash
 cd server
 npm run dev
 ```
 
-In terminal 2:
+Terminal 2:
 
 ```bash
 cd client
 npm run dev
 ```
 
-App: http://localhost:5173  
-API + Socket: http://localhost:3001
+Open the client at [http://localhost:5173](http://localhost:5173).
 
-## Build Commands
+## Environment Variables
+
+### Server
+
+- `PORT` - server port, default `3001`
+- `CLIENT_URL` - frontend origin used for CORS
+
+### Client
+
+- `VITE_SOCKET_URL` - backend URL used by Socket.io in production
+
+Example production values:
+
+```env
+CLIENT_URL=https://grid-lock-gamma.vercel.app
+VITE_SOCKET_URL=https://gridlock-server.onrender.com
+```
+
+## Build and Start
 
 ### Server
 
 ```bash
 cd server
 npm run build
-npm start
+npm run start
 ```
 
 ### Client
@@ -171,19 +131,40 @@ npm run build
 npm run preview
 ```
 
-## Environment Variables
+## Deployment Notes
 
-### Server
+- Deploy the frontend on Vercel.
+- Deploy the backend on Render.
+- Set `CLIENT_URL` on the backend to the Vercel URL.
+- Set `VITE_SOCKET_URL` on the frontend to the Render backend URL.
+- If the live app is slow to connect, wait a few seconds before assuming it is broken.
 
-- PORT (default: 3001)
-- CLIENT_URL (default: http://localhost:5173)
+## Folder Overview
 
-### Client
+```text
+GridLock/
+├── client/
+│   └── src/
+│       ├── components/
+│       ├── hooks/
+│       ├── services/
+│       ├── styles/
+│       ├── types/
+│       └── utils/
+└── server/
+    └── src/
+        ├── config/
+        ├── controllers/
+        ├── models/
+        ├── routes/
+        ├── services/
+        ├── socket/
+        └── utils/
+```
 
-- VITE_SOCKET_URL (optional, defaults to / for same-origin/proxy)
+## Why This Approach
 
-## Performance Notes
-
-- Full board payload is small: 900 cells is typically tens of KB.
-- In-memory Maps provide O(1) key access and straightforward mutation paths.
-- The design is ready to swap in Redis or persistent storage later if needed.
+- The in-memory store keeps the app lightweight and fast.
+- The server remains the source of truth for captures and cooldowns.
+- The UI stays responsive while the backend ensures consistency.
+- The modular layout makes it easy to swap in persistence later if needed.
